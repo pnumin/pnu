@@ -7,25 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
-    <!-- 
-    Palette Selection: "Vibrant Energy & Warning"
-    - Background: #F8FAFC (Slate 50)
-    - Primary Blue: #0EA5E9 (Sky 500) - Represents CO2/Atmosphere
-    - Warning Red: #EF4444 (Red 500) - Represents Temperature Rise
-    - Success Green: #10B981 (Emerald 500) - Represents Methane
-    - Dark Text: #1E293B (Slate 800)
-
-    Plan Summary:
-    1. Header: Dramatic intro with key context.
-    2. KPI Section: 3 cards showing total growth metrics (Big Numbers).
-    3. Narrative Section 1: CO2 vs Temp mixed chart (Dual axis).
-    4. Narrative Section 2: 2023 Anomaly Highlight using styled HTML/CSS.
-    5. Narrative Section 3: Methane (CH4) Trend Line Chart.
-    6. Process Flow: A simple HTML/CSS diagram explaining the feedback loop.
-    7. Footer: Summary and call to action.
-
-    NO SVG used. NO Mermaid JS used.
-    -->
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; background-color: #F8FAFC; color: #1E293B; }
         .chart-container {
@@ -51,14 +32,26 @@
             z-index: 0;
             transform: translateY(-50%);
         }
+        .home-btn {
+            position: fixed;
+            top: 1.5rem;
+            left: 1.5rem;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="p-4 md:p-8">
 
+    <!-- 홈 버튼 -->
+    <a href="index.html" class="home-btn bg-white/90 backdrop-blur-sm border border-slate-200 text-slate-800 font-bold py-2.5 px-5 rounded-full shadow-xl flex items-center gap-2 hover:bg-slate-800 hover:text-white hover:scale-105 transition-all duration-300 group">
+        <span class="text-xl">🏠</span>
+        <span class="text-sm">홈으로</span>
+    </a>
+
     <div class="max-w-6xl mx-auto space-y-12">
         
-        <!-- Header -->
-        <header class="text-center space-y-4">
+        <!-- 헤더 -->
+        <header class="text-center space-y-4 pt-10">
             <h1 class="text-4xl md:text-6xl font-black text-slate-800 tracking-tight">
                 뜨거워지는 지구: <span class="text-red-500">위기의 5년</span>
             </h1>
@@ -68,7 +61,7 @@
             </p>
         </header>
 
-        <!-- KPI Section -->
+        <!-- KPI 섹션 -->
         <section class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="bg-white rounded-2xl shadow-xl p-8 border-b-8 border-sky-500 transition hover:scale-105">
                 <p class="text-sm font-bold text-slate-400 uppercase mb-2">총 CO2 증가량</p>
@@ -87,7 +80,7 @@
             </div>
         </section>
 
-        <!-- Main Trend Chart -->
+        <!-- 메인 트렌드 차트 -->
         <section class="bg-white rounded-3xl shadow-2xl p-6 md:p-10">
             <div class="mb-8 border-l-4 border-sky-500 pl-4">
                 <h3 class="text-2xl font-bold text-slate-800">이산화탄소 농도와 기온의 강력한 상관관계</h3>
@@ -98,7 +91,7 @@
             </div>
         </section>
 
-        <!-- The 2023 Shock Highlight -->
+        <!-- 2023년 충격 하이라이트 -->
         <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
             <div class="space-y-6">
                 <div class="inline-block bg-red-100 text-red-600 px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Crucial Insight</div>
@@ -121,7 +114,7 @@
             </div>
             <div class="bg-slate-800 rounded-3xl p-8 text-white relative overflow-hidden h-full flex flex-col justify-center">
                 <div class="relative z-10">
-                    <h4 class="text-xl font-bold mb-4">온난화 피드백 루프 (HTML Diagram)</h4>
+                    <h4 class="text-xl font-bold mb-4">온난화 피드백 루프</h4>
                     <div class="space-y-6 relative">
                         <div class="step-line hidden md:block"></div>
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4">
@@ -132,13 +125,12 @@
                     </div>
                     <p class="mt-8 text-slate-400 text-sm italic">"가시적인 변화는 이미 임계점을 향하고 있습니다."</p>
                 </div>
-                <!-- Abstract visual elements using HTML -->
                 <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-red-600/20 rounded-full blur-3xl"></div>
                 <div class="absolute -top-10 -left-10 w-40 h-40 bg-sky-600/20 rounded-full blur-3xl"></div>
             </div>
         </section>
 
-        <!-- Secondary Gas Trend -->
+        <!-- 메탄 트렌드 섹션 -->
         <section class="bg-white rounded-3xl shadow-xl p-6 md:p-10 border border-slate-100">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
                 <div class="max-w-xl">
@@ -156,7 +148,7 @@
             </div>
         </section>
 
-        <!-- Action Section / Footer -->
+        <!-- 푸터 -->
         <footer class="bg-slate-900 rounded-3xl p-10 text-center text-white space-y-6">
             <h3 class="text-3xl font-bold italic">"Tomorrow is too late."</h3>
             <p class="text-slate-400 max-w-2xl mx-auto">
@@ -166,9 +158,9 @@
             <div class="pt-6 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center text-xs text-slate-500 gap-4">
                 <p>© 2026 Climate Data Analytics. All rights reserved.</p>
                 <div class="flex space-x-6">
-                    <span class="hover:text-white cursor-pointer">Data Privacy</span>
-                    <span class="hover:text-white cursor-pointer">Methodology</span>
-                    <span class="hover:text-white cursor-pointer">Source CSV Analysis</span>
+                    <span class="hover:text-white cursor-pointer">데이터 보안</span>
+                    <span class="hover:text-white cursor-pointer">분석 방법론</span>
+                    <span class="hover:text-white cursor-pointer">소스 데이터 정보</span>
                 </div>
             </div>
         </footer>
@@ -176,7 +168,7 @@
     </div>
 
     <script>
-        // Label Wrapping Utility (Required: Wrap if > 16 chars)
+        // 레이블 줄바꿈 함수
         const wrapLabel = (label) => {
             if (label.length <= 16) return label;
             const words = label.split(' ');
@@ -194,7 +186,7 @@
             return lines;
         };
 
-        // Shared Tooltip Config (Required)
+        // 공통 툴팁 설정
         const sharedTooltipConfig = {
             callbacks: {
                 title: function(tooltipItems) {
@@ -205,14 +197,14 @@
             }
         };
 
-        // Data from CSV
-        const years = ['2020년도 기록 데이터', '2021년도 기록 데이터', '2022년도 기록 데이터', '2023년도 기록 데이터', '2024년도 기록 데이터'].map(wrapLabel);
+        // 데이터 정의
+        const years = ['2020년 기록', '2021년 기록', '2022년 기록', '2023년 기록', '2024년 기록'].map(wrapLabel);
         const co2Data = [417.6, 421.4, 422.8, 425.6, 428.0];
         const methaneData = [1972, 1988, 2004, 2010, 2022];
         const tempData = [13.4, 13.5, 13.6, 14.6, 14.7];
 
         window.onload = function() {
-            // Chart 1: Mixed CO2 & Temp
+            // 차트 1: CO2 및 기온 혼합 차트
             const ctx1 = document.getElementById('mixedChart').getContext('2d');
             new Chart(ctx1, {
                 type: 'bar',
@@ -251,7 +243,7 @@
                         tooltip: sharedTooltipConfig
                     },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false } },
                         yCO2: { 
                             position: 'left', 
                             title: { display: true, text: 'CO2 농도 (ppm)', font: { weight: 'bold' } },
@@ -267,7 +259,7 @@
                 }
             });
 
-            // Chart 2: Methane Line Chart
+            // 차트 2: 메탄 라인 차트
             const ctx2 = document.getElementById('methaneChart').getContext('2d');
             new Chart(ctx2, {
                 type: 'line',
