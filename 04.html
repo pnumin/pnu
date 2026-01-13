@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>대학 교육비 분석 대시보드</title>
+    <!-- Chart.js 라이브러리 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 구글 폰트 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --background: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--background);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-sub);
+            font-size: 14px;
+        }
+
+        /* 컨트롤 패널 (검색 및 필터) */
+        .controls {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-sub);
+        }
+
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+
+        /* 차트 영역 */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* 테이블 영역 */
+        .table-container {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .table-header-info {
+            padding: 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .count-badge {
+            background: #dbeafe;
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .table-scroll {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--text-sub);
+            font-weight: 600;
+            text-align: left;
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        th:hover {
+            background: #f1f5f9;
+        }
+
+        th::after {
+            content: '↕';
+            font-size: 10px;
+            margin-left: 5px;
+            opacity: 0.3;
+        }
+
+        td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background-color: #f8fafc;
+        }
+
+        .cost-cell {
+            font-weight: 500;
+            color: var(--primary);
+            text-align: right;
+        }
+        
+        .num-cell {
+            text-align: right;
+        }
+
+        /* 태그 스타일 */
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .badge-National { background: #dcfce7; color: #166534; } /* 국립 */
+        .badge-Private { background: #fef9c3; color: #854d0e; } /* 사립 */
+        .badge-Special { background: #ede9fe; color: #5b21b6; } /* 특별법 */
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>🎓 지역별·설립구분별 대학 교육비 분석 리포트</h1>
+        <p class="subtitle">2024년 공시 데이터 기준 | 필터를 사용하여 데이터를 탐색하세요.</p>
+    </header>
+
+    <!-- 컨트롤 패널 -->
+    <div class="controls">
+        <div class="control-group">
+            <label for="searchInput">학교명 검색</label>
+            <input type="text" id="searchInput" placeholder="예: 서울대, 과학기술원...">
+        </div>
+        <div class="control-group">
+            <label for="regionFilter">지역 선택</label>
+            <select id="regionFilter">
+                <option value="All">전체 지역</option>
+                <!-- JS로 옵션 추가됨 -->
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="typeFilter">설립구분 선택</label>
+            <select id="typeFilter">
+                <option value="All">전체 설립구분</option>
+                <!-- JS로 옵션 추가됨 -->
+            </select>
+        </div>
+    </div>
+
+    <!-- 차트 영역 -->
+    <div class="charts-grid">
+        <div class="chart-card">
+            <canvas id="costChart"></canvas>
+        </div>
+        <div class="chart-card">
+            <canvas id="distChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 데이터 테이블 -->
+    <div class="table-container">
+        <div class="table-header-info">
+            <span>상세 데이터 목록</span>
+            <span class="count-badge" id="dataCount">0개 학교</span>
+        </div>
+        <div class="table-scroll">
+            <table id="univTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('univName')">학교명</th>
+                        <th onclick="sortTable('type')">설립구분</th>
+                        <th onclick="sortTable('region')">지역</th>
+                        <th onclick="sortTable('students')" class="num-cell">재학생 수</th>
+                        <th onclick="sortTable('cost')" class="num-cell">1인당 교육비(원)</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- JS로 데이터 렌더링 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. 데이터 준비 (제공해주신 CSV 데이터를 문자열로 저장) ---
+    const rawCsvData = `학교종류,설립구분,지역,상태,학교,재학생수,1인당교육비
+대학교,국립,강원,기존,강원대학교 ,21383,23973254.2
+대학교,국립,대구,기존,경북대학교 ,27535,27082775.8
+대학교,국립,경남,기존,경상국립대학교 ,19783,23506518.8
+교육대학,국립,인천,기존,경인교육대학교 ,3670,14205881.1
+교육대학,국립,충남,기존,공주교육대학교 ,1921,15033232.2
+대학교,특별법법인,광주,기존,광주과학기술원 ,2229,88585659.4
+교육대학,국립,광주,기존,광주교육대학교 ,1715,18494159.3
+대학교,국립,강원,기존,국립강릉원주대학교 ,7495,22494260.2
+대학교,국립,경북,기존,국립경국대학교 ,5322,24638367.8
+대학교,국립,충남,기존,국립공주대학교 ,14840,17274466.6
+대학교,국립,전북,기존,국립군산대학교 ,7205,21904918.2
+대학교,국립,경북,기존,국립금오공과대학교 ,5654,22078505.7
+대학교,국립,전남,기존,국립목포대학교 ,6436,26807754.8
+대학교,국립,전남,기존,국립목포해양대학교 ,2628,24878755.9
+대학교,국립,부산,기존,국립부경대학교 ,17886,19373226
+대학교,국립,전남,기존,국립순천대학교 ,7161,22397632.1
+대학교,국립,경남,기존,국립창원대학교 ,8906,21502669.8
+대학교,국립,충북,기존,국립한국교통대학교 ,8504,21088976.3
+대학교,국립,부산,기존,국립한국해양대학교 ,7184,25202306.5
+대학교,국립,대전,기존,국립한밭대학교 ,8872,19066470
+대학교,특별법법인,대구,기존,대구경북과학기술원 ,1837,98423925.5
+교육대학,국립,대구,기존,대구교육대학교 ,2291,13991134.5
+교육대학,국립,부산,기존,부산교육대학교 ,2108,14507507.5
+대학교,국립,부산,기존,부산대학교 ,26628,27220754.8
+대학교,국립,서울,기존,서울과학기술대학교 ,11845,20840008.1
+교육대학,국립,서울,기존,서울교육대학교 ,2471,17322384.4
+대학교,국립대법인,서울,기존,서울대학교 ,29073,63021143.1
+대학교,공립,서울,기존,서울시립대학교 ,11746,19994705.9
+대학교,특별법법인,울산,기존,울산과학기술원 ,4170,76402408.4
+대학교,국립대법인,인천,기존,인천대학교 ,12800,21799946.4
+대학교,국립,광주,기존,전남대학교 ,23476,26483123.9
+대학교,국립,전북,기존,전북대학교 ,21210,25076414.1
+교육대학,국립,전북,기존,전주교육대학교 ,1206,17847081.1
+대학교,국립,제주,기존,제주대학교 ,11169,26311876.1
+교육대학,국립,경남,기존,진주교육대학교 ,1451,22209828.4
+교육대학,국립,충북,기존,청주교육대학교 ,1414,18241836.1
+교육대학,국립,강원,기존,춘천교육대학교 ,1521,15755230.4
+대학교,국립,대전,기존,충남대학교 ,22475,23250576.1
+대학교,국립,충북,기존,충북대학교 ,16373,24860282.9
+대학교,국립,경기,기존,한경국립대학교 ,6015,19913120.1
+대학교,특별법법인,대전,기존,한국과학기술원 ,11999,95024117.7
+대학교,국립,충북,기존,한국교원대학교 ,5512,17967576.4
+방송통신대학,국립,서울,기존,한국방송통신대학교 ,94542,1289934.7
+대학교,특별법법인,전남,기존,한국에너지공과대학교 ,377,184342081.4
+각종학교(대학),특별법국립,서울,기존,한국예술종합학교 ,2749,31165835.1
+대학교,특별법국립,충남,기존,한국전통문화대학교 ,857,44738187.6
+대학교,국립,서울,기존,한국체육대학교 ,2974,17052618.3
+대학교,사립,경남,기존,가야대학교(김해) ,1734,14446218.6
+대학교,사립,경기,기존,가천대학교 ,24831,15492127.1
+대학교,사립,강원,기존,가톨릭관동대학교 ,5763,16419404.6
+대학교,사립,충북,기존,가톨릭꽃동네대학교 ,465,19806312
+대학교,사립,경기,기존,가톨릭대학교 ,10947,28496981.8
+대학교,사립,서울,기존,감리교신학대학교 ,1211,11094360.8
+대학교,사립,경기,기존,강남대학교 ,6600,14525360.6
+대학교,사립,서울,기존,강서대학교 ,1851,9896201.3
+대학교,사립,서울,기존,건국대학교 ,19820,17507867.6
+대학교,사립,충북,기존,건국대학교(글로컬) _분교,7415,17732528.3
+대학교,사립,충남,기존,건양대학교 ,6893,18343748.8
+사이버대학(대학),사립,대전,기존,건양사이버대학교 ,3812,4573498.1
+대학교,사립,경기,기존,경기대학교 ,15997,12292204.8
+대학교,사립,경남,기존,경남대학교 ,9915,15090255.6
+대학교,사립,강원,기존,경동대학교 ,7036,14389495
+대학교,사립,부산,기존,경성대학교 ,12866,11152264.6
+대학교,사립,경북,기존,경운대학교 ,4980,14282208.6
+대학교,사립,경북,기존,경일대학교 ,7301,13587432.2
+대학교,사립,서울,기존,경희대학교 ,33866,18794507.1
+사이버대학(대학),사립,서울,기존,경희사이버대학교 ,11219,3966320.5
+대학교,사립,대구,기존,계명대학교 ,22082,15309791.9
+대학교,사립,서울,기존,고려대학교 ,30683,33158577
+대학교,사립,세종,기존,고려대학교(세종) _분교,7322,22191632.4
+사이버대학(대학),사립,서울,기존,고려사이버대학교 ,10175,2825830.3
+대학교,사립,부산,기존,고신대학교 ,3613,16445002.1
+대학교,사립,광주,기존,광신대학교 ,965,10298730.7
+대학교,사립,서울,기존,광운대학교 ,9897,16682014.3
+대학교,사립,전남,기존,광주가톨릭대학교 ,97,28983522.3
+대학교,사립,광주,기존,광주대학교 ,5648,14490471.1
+대학교,사립,광주,기존,광주여자대학교 ,3506,12413864
+대학교,사립,서울,기존,국민대학교 ,18057,17999446.2
+사이버대학(대학),사립,경기,기존,국제사이버대학교 ,3540,4259231.7
+대학교,사립,충북,기존,극동대학교 ,3158,12093552.7
+사이버대학(대학),사립,충남,기존,글로벌사이버대학교 ,2516,4379413.3
+대학교,사립,충남,기존,금강대학교 ,115,49411623.2
+대학교,사립,경북,기존,김천대학교 ,2340,13609485.2
+대학교,사립,충남,기존,나사렛대학교 ,4932,12446063.6
+대학교,사립,광주,기존,남부대학교 ,3018,14068317.8
+대학교,사립,충남,기존,남서울대학교 ,9621,13567478.9
+대학교,사립,경기,기존,단국대학교 ,25916,16068454.5
+대학교,사립,경북,기존,대구가톨릭대학교 ,12041,15067887.8
+대학교,사립,경북,기존,대구대학교 ,16876,14227573.1
+사이버대학(대학),사립,경북,기존,대구사이버대학교 ,4691,3735430.3
+대학교,사립,경북,기존,대구예술대학교 ,278,21050900.7
+대학교,사립,경북,기존,대구한의대학교 ,7105,16065261.9
+대학교,사립,경북,기존,대신대학교 ,689,12300839.7
+대학교,사립,세종,기존,대전가톨릭대학교 ,53,66016399.5
+대학교,사립,대전,기존,대전대학교 ,8531,15736426.4
+대학교,사립,대전,기존,대전신학대학교 ,176,15164745.8
+대학교,사립,경기,기존,대진대학교 ,7672,13441694.1
+대학교,사립,서울,기존,덕성여자대학교 ,5686,14267321.9
+대학교,사립,서울,기존,동국대학교 ,17982,18316713.3
+대학교,사립,경북,기존,동국대학교(WISE) _분교,6782,16537484.1
+대학교,사립,서울,기존,동덕여자대학교 ,7306,11951406.1
+대학교,사립,부산,기존,동명대학교 ,7367,13213857
+대학교,사립,부산,기존,동서대학교 ,9159,14351298.1
+대학교,사립,전남,기존,동신대학교 ,6528,14958662.4
+대학교,사립,부산,기존,동아대학교 ,19596,15343235.2
+대학교,사립,경북,기존,동양대학교 ,4291,12717023.6
+대학교,사립,부산,기존,동의대학교 ,14899,12828136
+사이버대학(대학),사립,서울,기존,디지털서울문화예술대학교 ,2919,5875774.6
+대학교,사립,경기,기존,루터대학교 ,373,15999113.4
+대학교,사립,경기,기존,명지대학교 ,15689,14152147
+대학교,사립,대전,기존,목원대학교 ,7863,13599713.2
+대학교,사립,전남,기존,목포가톨릭대학교 ,482,18863343.6
+대학교,사립,대전,기존,배재대학교 ,7995,14155602.1
+대학교,사립,충남,기존,백석대학교 ,14163,13328646.9
+대학교,사립,부산,기존,부산가톨릭대학교 ,3797,13569140.5
+사이버대학(대학),사립,부산,기존,부산디지털대학교 ,2396,5147146.3
+대학교,사립,부산,기존,부산외국어대학교 ,7149,11651660.7
+대학교,사립,경남,기존,부산장신대학교 ,311,12840145
+사이버대학(대학),사립,서울,기존,사이버한국외국어대학교 ,6386,3575904.4
+대학교,사립,서울,기존,삼육대학교 ,5922,15547928.5
+대학교,사립,서울,기존,상명대학교 ,12679,14803615.4
+대학교,사립,강원,기존,상지대학교 ,6295,13910433.3
+대학교,사립,서울,기존,서강대학교 ,12178,20292904.3
+대학교,사립,서울,기존,서경대학교 ,7299,13165646.3
+대학교,사립,서울,기존,서울기독대학교 ,818,8905488.6
+사이버대학(대학),사립,서울,기존,서울디지털대학교 ,10986,3218316.3
+사이버대학(대학),사립,서울,기존,서울사이버대학교 ,16737,3656955.9
+대학교,사립,경기,기존,서울신학대학교 ,2703,13658980.7
+대학교,사립,서울,기존,서울여자대학교 ,7461,13052603.7
+대학교,사립,경기,기존,서울장신대학교 ,562,13311376.5
+대학교,사립,서울,기존,서울한영대학교 ,915,9211164.4
+대학교,사립,충북,기존,서원대학교 ,7146,13335537.4
+대학교,사립,충남,기존,선문대학교 ,9133,15501949.6
+대학교,사립,경기,기존,성결대학교 ,5626,12008067
+대학교,사립,서울,기존,성공회대학교 ,2275,12492876.7
+대학교,사립,서울,기존,성균관대학교 ,28035,32424599.8
+대학교,사립,서울,기존,성신여자대학교 ,10077,13462119.1
+대학교,사립,충북,기존,세명대학교 ,6464,14959229.8
+대학교,사립,서울,기존,세종대학교 ,16205,17868456.8
+사이버대학(대학),사립,서울,기존,세종사이버대학교 ,10996,3780244.1
+대학교,사립,전남,기존,세한대학교 ,4096,11098100.1
+대학교,사립,광주,기존,송원대학교 ,2990,15355007.9
+대학교,사립,경기,기존,수원가톨릭대학교 ,154,44568257.1
+대학교,사립,경기,기존,수원대학교 ,8933,14014425.1
+대학교,사립,서울,기존,숙명여자대학교 ,12611,16925258.8
+각종학교(대학),사립,충북,기존,순복음총회신학교 ,119,9687832.8
+대학교,사립,충남,기존,순천향대학교 ,12310,22844183.3
+대학교,사립,서울,기존,숭실대학교 ,17480,14185021.5
+사이버대학(대학),사립,서울,기존,숭실사이버대학교 ,7445,4780520.1
+대학교,사립,경북,기존,신경주대학교 ,905,19656990
+대학교,사립,부산,기존,신라대학교 ,7625,12047447.8
+대학교,사립,경기,기존,신한대학교 ,6925,13099001.2
+대학교,사립,경기,기존,아신대학교 ,826,11957680.5
+대학교,사립,경기,기존,아주대학교 ,13855,28977842.1
+대학교,사립,경기,기존,안양대학교 ,5135,13092190.9
+대학교,사립,서울,기존,연세대학교 ,32532,39659613.3
+대학교,사립,강원,기존,연세대학교(미래) _분교,7719,26981033.2
+대학교,사립,경북,기존,영남대학교 ,22477,17114727.6
+대학교,사립,경북,기존,영남신학대학교 ,619,11374838.4
+대학교,사립,부산,기존,영산대학교(해운대) ,5901,12537080.9
+대학교,사립,전남,기존,영산선학대학교 ,18,66327239.1
+대학교,사립,전북,기존,예수대학교 ,474,13773660.4
+대학교,사립,전북,기존,예원예술대학교 ,1627,6756040.4
+대학교,사립,경기,기존,용인대학교 ,5902,12194192.5
+대학교,사립,전북,기존,우석대학교 ,7358,14848584.2
+대학교,사립,대전,기존,우송대학교 ,10473,13075325.1
+대학교,사립,울산,기존,울산대학교 ,12283,27423507.9
+대학교,사립,전북,기존,원광대학교 ,13622,17479418.3
+사이버대학(대학),사립,전북,기존,원광디지털대학교 ,6021,3914042.4
+대학교,사립,경북,기존,위덕대학교 ,2486,14138660
+대학교,사립,충북,기존,유원대학교 ,3551,11822601.1
+대학교,사립,대전,기존,을지대학교 ,4867,21385799.5
+대학교,사립,서울,기존,이화여자대학교 ,22123,22618158.4
+대학교,사립,경남,기존,인제대학교 ,7819,22630379.5
+대학교,사립,인천,기존,인천가톨릭대학교 ,737,19976669.3
+대학교,사립,인천,기존,인하대학교 ,20720,21500336.6
+대학교,사립,서울,기존,장로회신학대학교 ,2076,12374717.6
+대학교,사립,전북,기존,전주대학교 ,11036,14387099.9
+기술대학,사립,서울,기존,정석대학 ,24,10220558.6
+대학교,사립,제주,기존,제주국제대학교 ,548,14605585.9
+대학교,사립,광주,기존,조선대학교 ,18766,16566399.1
+대학교,사립,충남,기존,중부대학교 ,9145,10690026.7
+대학교,사립,서울,기존,중앙대학교 ,29267,18532511.5
+대학교,사립,경기,기존,중앙승가대학교 ,128,32735793.7
+대학교,사립,충북,기존,중원대학교 ,3518,14754773.9
+대학교,사립,경기,기존,차의과학대학교 ,3230,44021476.6
+대학교,사립,경남,기존,창신대학교 ,1933,15688715.7
+산업대학,사립,충남,기존,청운대학교 ,5974,13825356.5
+대학교,사립,충북,기존,청주대학교 ,12142,13897035.1
+대학교,사립,전남,기존,초당대학교 ,2818,14217207.8
+대학교,사립,서울,기존,총신대학교 ,3268,12310192.2
+대학교,사립,서울,기존,추계예술대학교 ,1276,15114297.6
+대학교,사립,경기,기존,칼빈대학교 ,2256,8689078.8
+사이버대학(대학),사립,서울,신설,태재대학교 ,26,551323697.4
+대학교,사립,경기,기존,평택대학교 ,3475,13338960.7
+대학교,사립,경북,기존,포항공과대학교 ,3581,132731380.8
+대학교,사립,경기,기존,한국공학대학교 ,7674,18690097.2
+대학교,사립,충남,기존,한국기술교육대학교 ,4785,46081139.4
+대학교,사립,서울,기존,한국성서대학교 ,1143,14957588.9
+사이버대학(대학),사립,서울,기존,한국열린사이버대학교 ,5955,7095036.8
+대학교,사립,서울,기존,한국외국어대학교 ,19305,12702852.9
+대학교,사립,대전,기존,한국침례신학대학교 ,1398,12482083.3
+대학교,사립,경기,기존,한국항공대학교 ,4718,23605392.8
+대학교,사립,대전,기존,한남대학교 ,12457,13236873.6
+대학교,사립,경북,기존,한동대학교 ,4323,22387730.4
+대학교,사립,강원,기존,한라대학교 ,3293,13448831.9
+대학교,사립,강원,기존,한림대학교 ,7884,31846512.6
+대학교,사립,충남,기존,한서대학교 ,6619,17092828.5
+대학교,사립,서울,기존,한성대학교 ,8030,13126196.1
+대학교,사립,경기,기존,한세대학교 ,3121,13445221.3
+대학교,사립,경기,기존,한신대학교 ,5645,12240746.8
+대학교,사립,서울,기존,한양대학교 ,24097,27922527.4
+대학교,사립,경기,기존,한양대학교(ERICA) _분교,12350,24554789.6
+사이버대학(대학),사립,서울,기존,한양사이버대학교 ,17952,3300919.3
+대학교,사립,전북,기존,한일장신대학교 ,905,12179307.1
+대학교,사립,경기,기존,협성대학교 ,4053,13157570.9
+대학교,사립,광주,기존,호남대학교 ,7739,11643990.8
+대학교,사립,광주,기존,호남신학대학교 ,686,10461618.5
+대학교,사립,충남,기존,호서대학교 ,13660,15114781.9
+산업대학,사립,전북,기존,호원대학교 ,5100,12517985.3
+대학교,사립,서울,기존,홍익대학교 ,21766,13468139.8
+대학교,사립,경기,기존,화성의과학대학교 ,450,13140444.5
+사이버대학(대학),사립,부산,기존,화신사이버대학교 ,1872,5356788.2`;
+
+    let allData = [];
+    let sortState = { key: 'cost', order: 'desc' };
+    let costChartInstance = null;
+    let distChartInstance = null;
+
+    // --- 2. 데이터 파싱 ---
+    function parseData() {
+        const lines = rawCsvData.trim().split('\n');
+        // 첫 줄(헤더) 제외하고 데이터 매핑
+        allData = lines.slice(1).map(line => {
+            const cols = line.split(',');
+            // CSV 형식이 깨질 경우를 대비해 기본 정리
+            return {
+                schoolType: cols[0],
+                type: cols[1], // 설립구분
+                region: cols[2], // 지역
+                status: cols[3],
+                univName: cols[4].trim(), // 학교명
+                students: parseInt(cols[5]), // 재학생수
+                cost: parseFloat(cols[6]) // 1인당 교육비
+            };
+        });
+    }
+
+    // --- 3. 초기화 (필터 옵션 세팅 등) ---
+    function init() {
+        parseData();
+        
+        // 지역 필터 옵션 생성
+        const regions = [...new Set(allData.map(d => d.region))].sort();
+        const regionSelect = document.getElementById('regionFilter');
+        regions.forEach(r => {
+            const opt = document.createElement('option');
+            opt.value = r;
+            opt.innerText = r;
+            regionSelect.appendChild(opt);
+        });
+
+        // 설립구분 필터 옵션 생성
+        const types = [...new Set(allData.map(d => d.type))].sort();
+        const typeSelect = document.getElementById('typeFilter');
+        types.forEach(t => {
+            const opt = document.createElement('option');
+            opt.value = t;
+            opt.innerText = t;
+            typeSelect.appendChild(opt);
+        });
+
+        // 이벤트 리스너 등록
+        document.getElementById('searchInput').addEventListener('input', updateDashboard);
+        document.getElementById('regionFilter').addEventListener('change', updateDashboard);
+        document.getElementById('typeFilter').addEventListener('change', updateDashboard);
+
+        // 초기 렌더링
+        updateDashboard();
+    }
+
+    // --- 4. 메인 로직: 필터링 및 업데이트 ---
+    function updateDashboard() {
+        const searchVal = document.getElementById('searchInput').value.toLowerCase();
+        const regionVal = document.getElementById('regionFilter').value;
+        const typeVal = document.getElementById('typeFilter').value;
+
+        // 데이터 필터링
+        let filteredData = allData.filter(d => {
+            const matchesSearch = d.univName.toLowerCase().includes(searchVal);
+            const matchesRegion = regionVal === 'All' || d.region === regionVal;
+            const matchesType = typeVal === 'All' || d.type === typeVal;
+            return matchesSearch && matchesRegion && matchesType;
+        });
+
+        // 데이터 정렬
+        filteredData.sort((a, b) => {
+            let valA = a[sortState.key];
+            let valB = b[sortState.key];
+            
+            if (typeof valA === 'string') {
+                return sortState.order === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
+            } else {
+                return sortState.order === 'asc' ? valA - valB : valB - valA;
+            }
+        });
+
+        document.getElementById('dataCount').innerText = `${filteredData.length}개 학교`;
+
+        renderTable(filteredData);
+        renderCharts(filteredData);
+    }
+
+    // --- 5. 테이블 렌더링 ---
+    function renderTable(data) {
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        data.forEach(d => {
+            // 설립구분 뱃지 스타일링
+            let badgeClass = 'badge';
+            if (d.type.includes('국립')) badgeClass += ' badge-National';
+            else if (d.type.includes('사립')) badgeClass += ' badge-Private';
+            else badgeClass += ' badge-Special';
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${d.univName}</td>
+                <td><span class="${badgeClass}">${d.type}</span></td>
+                <td>${d.region}</td>
+                <td class="num-cell">${d.students.toLocaleString()}명</td>
+                <td class="cost-cell">${Math.round(d.cost).toLocaleString()}원</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    // --- 6. 정렬 기능 ---
+    function sortTable(key) {
+        if (sortState.key === key) {
+            sortState.order = sortState.order === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortState.key = key;
+            sortState.order = 'desc'; // 기본 내림차순 (숫자가 많으므로)
+        }
+        updateDashboard();
+    }
+
+    // --- 7. 차트 렌더링 ---
+    function renderCharts(data) {
+        // A. 1인당 교육비 Top 5 (현재 필터 기준)
+        const top5 = [...data].sort((a,b) => b.cost - a.cost).slice(0, 5);
+        
+        // B. 설립구분별 학생 수 분포
+        const typeGroups = {};
+        data.forEach(d => {
+            if (!typeGroups[d.type]) typeGroups[d.type] = 0;
+            typeGroups[d.type] += d.students;
+        });
+
+        // 차트 1: Top 5 Bar Chart
+        const ctx1 = document.getElementById('costChart').getContext('2d');
+        if (costChartInstance) costChartInstance.destroy();
+        
+        costChartInstance = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                labels: top5.map(d => d.univName),
+                datasets: [{
+                    label: '1인당 교육비 (원)',
+                    data: top5.map(d => d.cost),
+                    backgroundColor: 'rgba(37, 99, 235, 0.7)',
+                    borderColor: 'rgba(37, 99, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '현재 필터 내 교육비 상위 5개교' },
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        // 차트 2: 학생 수 분포 Doughnut Chart
+        const ctx2 = document.getElementById('distChart').getContext('2d');
+        if (distChartInstance) distChartInstance.destroy();
+
+        distChartInstance = new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(typeGroups),
+                datasets: [{
+                    data: Object.values(typeGroups),
+                    backgroundColor: [
+                        '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: { display: true, text: '설립구분별 총 재학생 분포' },
+                    legend: { position: 'right' }
+                }
+            }
+        });
+    }
+
+    // 실행
+    window.onload = init;
+</script>
+
+</body>
+</html>
